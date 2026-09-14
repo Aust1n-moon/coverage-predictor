@@ -20,6 +20,7 @@ class NeuralNetwork(nn.Module):
             nn.Linear(64,6),
         )
 
+    #forward calculation
     def forward(self, x):
         logits = self.layers(x)
         return logits

@@ -1,2 +1,4 @@
 data/csv/
 *.npz
+Yolo/yolo-training/NFL-player-tracker-4/*/images/
+Yolo/yolo-training/NFL-player-tracker-4/*/labels/

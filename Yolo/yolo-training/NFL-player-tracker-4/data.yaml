@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 5
+names: ['Helmet', 'Helmet-Blurred', 'Helmet-Difficult', 'Helmet-Partial', 'Helmet-Sideline']
+
+roboflow:
+  workspace: austin-moon-jung-hyun
+  project: nfl-player-tracker-wg0k5
+  version: 4
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/austin-moon-jung-hyun/nfl-player-tracker-wg0k5/dataset/4

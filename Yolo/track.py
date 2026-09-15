@@ -61,13 +61,13 @@ def stitch_broken_tracks(detections, max_gap=15, max_dist=50):
     return detections
 
 
-def track_video(video_path, model_path, conf=0.5):
+def track_video(video_path, model_path, conf=0.5, tracker="bytetrack.yaml"):
     """Run YOLO tracking, return list of per-frame detections."""
     model = YOLO(model_path)
     results = model.track(
         source=video_path,
         conf=conf,
-        tracker="bytetrack.yaml",
+        tracker=tracker,
         stream=True,  # memory-efficient for long videos
     )
 

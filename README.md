@@ -31,16 +31,38 @@ MLP classifier → coverage prediction
 ## Project Structure
 
 ```
+run.py              # End-to-end pipeline: video → tracking → features → prediction
 Yolo/
-  track.py          # YOLO tracking + broken ID stitching → CSV
-  pipeline.py       # Homography, O/D split, feature extraction, full inference pipeline
+  track.py          # YOLO tracking + broken ID stitching
+  pipeline.py       # Homography, O/D split, feature extraction
   bytetrack.yaml    # ByteTrack tracker config (buffer=60)
 model/
   model.py          # PyTorch MLP (339 → 256 → 128 → 64 → 6)
-  train.py          # Training script with StandardScaler preprocessing
+  train.py          # Training script, saves model + scaler to coverage_model.pt
 data/
   processing.ipynb  # NFL Big Data Bowl CSV → 339-dim feature vectors → processed_2023.npz
 ```
+
+## Usage
+
+```bash
+# 1. Train the model (saves model/coverage_model.pt)
+python model/train.py
+
+# 2. Run the full pipeline on a video clip
+python run.py path/to/clip.mp4 --snap-frame 42
+```
+
+The pipeline will:
+1. Run YOLO tracking on the video
+2. Open a window for 4-point field calibration (click 4 known yard-line points, enter field coordinates)
+3. Extract the 339-dim feature vector
+4. Output the predicted coverage with probabilities
+
+Optional arguments:
+- `--yolo-model path/to/best.pt` — custom YOLO weights
+- `--nn-model path/to/coverage_model.pt` — custom NN checkpoint
+- `--conf 0.5` — YOLO confidence threshold
 
 ## How It Works
 

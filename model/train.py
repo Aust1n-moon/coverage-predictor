@@ -85,4 +85,11 @@ for epoch in range(epochs):
     print(f"Epoch{epoch+1}\n --------------")
     train_loop(train_loader,model,loss_fn,optimizer)
     test_loop(test_loader,model,loss_fn)
-    print("Done")
+
+save_path = os.path.join(os.path.dirname(__file__), 'coverage_model.pt')
+torch.save({
+    'model_state_dict': model.state_dict(),
+    'scaler_mean': scaler.mean_,
+    'scaler_scale': scaler.scale_,
+}, save_path)
+print(f"Saved model to {save_path}")

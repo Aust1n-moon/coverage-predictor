@@ -2,8 +2,8 @@ train: ../train/images
 val: ../valid/images
 test: ../test/images
 
-nc: 5
-names: ['Helmet', 'Helmet-Blurred', 'Helmet-Difficult', 'Helmet-Partial', 'Helmet-Sideline']
+nc: 2
+names: ['Helmet', 'Helmet-Sideline']
 
 roboflow:
   workspace: austin-moon-jung-hyun

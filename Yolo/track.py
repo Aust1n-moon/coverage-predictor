@@ -68,7 +68,9 @@ def track_video(video_path, model_path, conf=0.5, tracker="bytetrack.yaml"):
         source=video_path,
         conf=conf,
         tracker=tracker,
-        stream=True,  # memory-efficient for long videos
+        stream=True,
+        show=False,
+        verbose=True,
     )
 
     detections = []

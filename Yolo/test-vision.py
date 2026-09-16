@@ -10,8 +10,8 @@ import random
 import sys
 from ultralytics import YOLO
 
-MODEL_PATH = "yolo-training/runs/detect/runs/nfl-player-tracker-2class-2/weights/best.pt"
-VIDEO_DIR = "training-videos"
+MODEL_PATH = "Yolo/yolo-training/runs/detect/runs/nfl-player-tracker-2class-2/weights/best.pt"
+VIDEO_DIR = "test videos"
 
 if __name__ == "__main__":
     videos = glob.glob(f"{VIDEO_DIR}/*.mp4") + glob.glob(f"{VIDEO_DIR}/*.avi") + glob.glob(f"{VIDEO_DIR}/*.mov")

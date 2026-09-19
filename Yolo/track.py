@@ -70,7 +70,7 @@ def track_video(video_path, model_path, conf=0.5, tracker="bytetrack.yaml"):
         tracker=tracker,
         stream=True,
         show=False,
-        verbose=True,
+        verbose=False,
     )
 
     detections = []

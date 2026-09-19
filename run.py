@@ -21,7 +21,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'Yolo'))
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'model'))
 
 from track import track_video, stitch_broken_tracks
-from pipeline import compute_homography, process_video_clip, auto_calibrate
+from pipeline import compute_homography, process_video_clip, auto_calibrate, detect_snap_frame
 from model import NeuralNetwork
 
 COVERAGE_LABELS = ['2_MAN', 'COVER_0', 'COVER_1', 'COVER_2', 'COVER_3', 'COVER_4']
@@ -30,8 +30,8 @@ COVERAGE_LABELS = ['2_MAN', 'COVER_0', 'COVER_1', 'COVER_2', 'COVER_3', 'COVER_4
 def main():
     parser = argparse.ArgumentParser(description="Video → coverage prediction")
     parser.add_argument("video", help="Path to game video clip")
-    parser.add_argument("--snap-frame", type=int, required=True,
-                        help="Frame index of the snap")
+    parser.add_argument("--snap-frame", type=int, default=None,
+                        help="Frame index of the snap (auto-detected if omitted)")
     parser.add_argument("--yolo-model",
                         default="Yolo/yolo-training/runs/detect/runs/nfl-player-tracker-2class-2/weights/best.pt")
     parser.add_argument("--nn-model", default="model/coverage_model.pt")
@@ -39,8 +39,13 @@ def main():
                         help="Leftmost visible yard line number (e.g. 30, 40)")
     parser.add_argument("--side", choices=["left", "right"], required=True,
                         help="Which side of the field the play is on (left or right of midfield)")
+    parser.add_argument("--play-direction", choices=["left", "right"], default="right",
+                        help="Direction offense is going (left or right on screen)")
+    parser.add_argument("--yard-interval", type=int, default=5, choices=[5, 10],
+                        help="Yards between detected lines (5 for All22, 10 for broadcast)")
     parser.add_argument("--conf", type=float, default=0.5,
                         help="YOLO confidence threshold")
+    parser.add_argument("--debug", action="store_true", help="Print O/D clustering details")
     args = parser.parse_args()
 
     # 1. YOLO tracking
@@ -54,26 +59,46 @@ def main():
     n_frames = len({d["frame"] for d in detections})
     print(f"  {len(detections)} detections, {n_frames} frames")
 
-    # 2. Homography calibration
-    print("Detecting yard lines and hash marks...")
-    cap = cv2.VideoCapture(args.video)
-    cap.set(cv2.CAP_PROP_POS_FRAMES, args.snap_frame)
-    ret, frame = cap.read()
-    cap.release()
-    if not ret:
-        sys.exit(f"Could not read frame {args.snap_frame}")
+    # 1b. Snap detection
+    snap_frame = args.snap_frame
+    if snap_frame is None:
+        print("Auto-detecting snap frame...")
+        snap_frame = detect_snap_frame(detections)
+        print(f"  Snap detected at frame {snap_frame}")
+    else:
+        print(f"  Using manual snap frame: {snap_frame}")
 
-    result = auto_calibrate(frame, args.yard_line, args.side)
+    # 2. Homography calibration — try snap frame first, fall back to earlier frames
+    print("Detecting yard lines and hash marks...")
+    result = None
+    cal_frame_idx = snap_frame
+    for offset in [0, -10, -20, -50, -100, -snap_frame]:
+        cal_frame_idx = max(0, snap_frame + offset)
+        cap = cv2.VideoCapture(args.video)
+        cap.set(cv2.CAP_PROP_POS_FRAMES, cal_frame_idx)
+        ret, frame = cap.read()
+        cap.release()
+        if not ret:
+            continue
+        result = auto_calibrate(frame, args.yard_line, args.side, args.yard_interval)
+        if result is not None:
+            if offset != 0:
+                print(f"  Calibrated from frame {cal_frame_idx} (snap frame too zoomed)")
+            break
     if result is None:
         sys.exit("Auto-calibration failed — could not detect enough yard lines or hash marks")
 
     pixel_pts, field_pts = result
     print(f"  Auto-detected {len(pixel_pts)} calibration points")
+    print(f"  Pixel points: {pixel_pts}")
+    print(f"  Field points: {field_pts}")
     H = compute_homography(pixel_pts, field_pts)
+    print(f"  H: {H}")
 
     # 3. Feature extraction (339-dim, matching training data format)
     print("Extracting features...")
-    features = process_video_clip(detections, H, args.snap_frame, args.video)
+    features = process_video_clip(detections, H, snap_frame, args.video,
+                                   play_direction=args.play_direction, debug=args.debug)
     if features is None:
         sys.exit("Could not build feature vector — not enough players detected")
     print(f"  Feature vector: {features.shape}")

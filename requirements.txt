@@ -1,0 +1,6 @@
+gradio>=4.0
+ultralytics>=8.0
+torch
+opencv-python-headless
+numpy
+lap
